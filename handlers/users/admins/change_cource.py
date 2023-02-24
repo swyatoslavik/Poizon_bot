@@ -25,4 +25,6 @@ async def change_cource(message: types.Message, state: FSMContext):
         return
 
     MAIN_DATA.update("A2", answer)
-    await message.answer(f"Данные успешно обновлены. Текущий курс: {answer}", reply_markup=admins_menu)
+    await message.answer(f"Данные успешно обновлены. Текущий курс: {answer}")
+    await state.finish()
+    await menu(message)

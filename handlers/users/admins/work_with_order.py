@@ -98,3 +98,4 @@ async def change_clothes(message: types.Message, state: FSMContext):
                               f"Ваш заказ #{data.get('select_order')} получил новый статус: {answer}")
 
     await state.finish()
+    await menu(message)

@@ -26,4 +26,6 @@ async def change_clothes(message: types.Message, state: FSMContext):
         return
 
     MAIN_DATA.update("D2", answer)
-    await message.answer(f"Данные успешно обновлены. Текущая комиссия сервиса: {answer}", reply_markup=admins_menu)
+    await message.answer(f"Данные успешно обновлены. Текущая комиссия сервиса: {answer}")
+    await state.finish()
+    await menu(message)

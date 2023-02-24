@@ -1,7 +1,4 @@
-
-
 async def on_startup(dp):
-
     import filters
     filters.setup(dp)
 
@@ -11,6 +8,7 @@ async def on_startup(dp):
     from utils.set_bot_commands import set_default_commands
     await set_default_commands(dp)
     print("Бот запущен")
+
 
 if __name__ == "__main__":
     from aiogram import executor
