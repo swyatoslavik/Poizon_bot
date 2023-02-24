@@ -11,7 +11,6 @@ from keyboards.default.yes_no import kb_yes_no
 
 from loader import dp, bot
 from states.calculate_clothes import CalculateClothes
-from states.calculate_shoes import CalculateShoes
 
 
 async def check_link(link):
