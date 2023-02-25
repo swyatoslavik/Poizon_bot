@@ -4,7 +4,7 @@ from aiogram.types import ContentType, CallbackQuery
 
 from data import config
 from filters import IsPrivate
-from google_sheets import ORDERS, MAIN_DATA
+from google_sheets import ORDERS, MAIN_DATA, USERS
 from handlers.users.menu import menu
 from keyboards.default import kb_return
 from keyboards.default.yes_no import kb_yes_no
@@ -55,7 +55,8 @@ async def get_shoes_price(message: types.Message, state: FSMContext):
     cource = MAIN_DATA.acell('A2').value
     com_shoes = MAIN_DATA.acell("B2").value
     com_service = MAIN_DATA.acell("D2").value
-    price = int(float(answer) * float(cource) + float(com_shoes) + float(com_service))
+    balance = USERS.cell(USERS.find(str(message.from_user.id)).row, 4).value
+    price = int(float(answer) * float(cource) + float(com_shoes) + float(com_service) - balance)
     await state.update_data(price=price)
 
     await message.answer(f"Стоимость пары:\n"
@@ -158,6 +159,8 @@ async def get_shoes_photo(message: types.Message, state: FSMContext):
     await bot.send_message(473151013, f"Новый заказ (обувь).\n{text}")
 
     await message.answer(f"Заказ #{order_number} создан и отправлен модератору. В ближайшее время он будет рассмотрен")
+    number_of_orders = USERS.cell(USERS.find(str(message.from_user.id)).row, 3).value
+    USERS.update_cell(USERS.find(str(message.from_user.id)).row, 3, str(int(number_of_orders) + 1))
 
     await menu(message)
     await state.finish()

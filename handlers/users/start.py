@@ -1,6 +1,7 @@
 from aiogram import types
 from aiogram.dispatcher.filters import Command
 
+from google_sheets import USERS
 from handlers.users.menu import menu
 from loader import dp
 
@@ -16,4 +17,8 @@ async def command_start(message: types.Message):
         "•Мы гарантируем качество товара 🛡️\n\n"
         "Для оформления заказа воспользуйтесь кнопками или напишите менеджеру: @poizon_sell_manager. Мы всегда готовы помочь вам с выбором товара и ответить на любые вопросы. 🤗\n"
         "Выбирайте наш сервис и наслаждайтесь покупками! 🛍️")
+
     await menu(message)
+    if not USERS.find(str(message.from_user.id)):
+        USERS.append_row([str(message.from_user.id), message.from_user.first_name, 0, 0])
+

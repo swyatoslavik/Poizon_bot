@@ -5,7 +5,7 @@ from data.config import admins_id
 from google_sheets import MAIN_DATA
 
 from handlers.users.admins.admins_menu import menu
-from keyboards.default import admins_menu, kb_return
+from keyboards.default import kb_return
 from loader import dp
 
 from states.admins import ChangeCommission
