@@ -89,6 +89,10 @@ async def command_faq(message: types.Message):
                                    slovar["status"],
                                    slovar["price"],
                                    slovar["link"]])
+    if not list_of_orders:
+        await message.answer("У вас пока что нет ни одного заказа.")
+        await menu(message)
+        return
     text = ""
     for order in list_of_orders:
         text += (f"#{order[0]}\n"

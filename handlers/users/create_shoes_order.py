@@ -56,7 +56,7 @@ async def get_shoes_price(message: types.Message, state: FSMContext):
     com_shoes = MAIN_DATA.acell("B2").value
     com_service = MAIN_DATA.acell("D2").value
     balance = USERS.cell(USERS.find(str(message.from_user.id)).row, 4).value
-    price = int(float(answer) * float(cource) + float(com_shoes) + float(com_service) - balance)
+    price = int(float(answer) * float(cource) + float(com_shoes) + float(com_service) - float(balance))
     await state.update_data(price=price)
 
     await message.answer(f"Стоимость пары:\n"
