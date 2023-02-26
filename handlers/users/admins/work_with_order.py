@@ -34,8 +34,8 @@ async def change_clothes(message: types.Message, state: FSMContext):
              f"\t\t\t\t username:\t\t@{user.username}\n"
              f"\t\t\t\t Название:\t\t{order_info[2]}\n"
              f"\t\t\t\t Статус:\t\t{order_info[4]}\n"
-             f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n\n"
-             f"\t\t\t\t Ссылка:\t\t{order_info[4]}")
+             f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n"
+             f"\t\t\t\t Ссылка:\t\t{order_info[3]}")
     photo = await send_image(chat_id=message.chat.id, image_url=order_info[6])
     await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_statuses)
     await ChangeOrderStatus.change_status.set()
@@ -64,12 +64,13 @@ async def change_clothes(message: types.Message, state: FSMContext):
     order_info = ORDERS.row_values(ORDERS.find(data.get("select_order")).row)
     user = await dp.bot.get_chat(order_info[1])
     text = ""
+    print(order_info)
     text += (f"#{order_info[0]}\n"
              f"\t\t\t\t username:\t\t@{user.username}\n"
              f"\t\t\t\t Название:\t\t{order_info[2]}\n"
              f"\t\t\t\t Статус:\t\t{order_info[4]}\n"
-             f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n\n"
-             f"\t\t\t\t Ссылка:\t\t{order_info[4]}")
+             f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n"
+             f"\t\t\t\t Ссылка:\t\t{order_info[3]}")
     await message.answer(text)
 
     await dp.bot.send_message(int(ORDERS.cell(ORDERS.find(data.get("select_order")).row, 2).value),

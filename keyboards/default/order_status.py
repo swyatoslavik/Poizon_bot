@@ -16,8 +16,8 @@ kb_statuses = ReplyKeyboardMarkup(
         ],
         [
             KeyboardButton(text="прибыл в Уссурийск"),
-            KeyboardButton(text="отправлен к PoisonSell"),
-            KeyboardButton(text="принят PoisonSell"),
+            KeyboardButton(text="отправлен к PoisonPapa"),
+            KeyboardButton(text="принят PoisonPapa"),
         ],
         [
             KeyboardButton(text="отправлен покупателю"),
