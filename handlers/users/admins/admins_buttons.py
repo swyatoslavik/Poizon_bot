@@ -1,4 +1,7 @@
+import os
+
 from aiogram import types
+from aiogram.types import ParseMode
 
 from data.config import admins_id
 
@@ -8,7 +11,7 @@ from handlers.users.menu import menu as user_menu
 
 from keyboards.default import kb_return
 from loader import dp
-from states.admins import ChangeCourse, ChangeShoes, ChangeClothes, ChangeCommission, ChangeOrderStatus
+from states.admins import ChangeCourse, ChangeShoes, ChangeClothes, ChangeCommission, ChangeOrderStatus, AddPromocode
 
 
 @dp.message_handler(text="💴Изменить курс юаня", user_id=admins_id)
@@ -53,17 +56,20 @@ async def command_calculate_clothes(message: types.Message):
                                slovar["order_number"],
                                slovar["order_name"],
                                slovar["status"],
-                               slovar["price"]])
+                               slovar["price"],
+                               slovar["link"]])
     text = ""
     for order in list_of_orders:
         text += (f"#{order[1]}\n"
                  f"\t\t\t\t username:\t\t@{order[0]}\n"
                  f"\t\t\t\t Название:\t\t{order[2]}\n"
                  f"\t\t\t\t Статус:\t\t{order[3]}\n"
-                 f"\t\t\t\t Стоимость:\t\t{order[4]} руб\n\n")
-    with open('list_of_orders.txt', 'w') as file:
+                 f"\t\t\t\t Стоимость:\t\t{order[4]}₽\n"
+                 f"\t\t\t\t Ссылка: \t\t{order[5]}\n\n")
+    text = text.encode('utf-8')
+    with open('./media/list_of_orders.txt', 'wb') as file:
         file.write(text)
-    with open('list_of_orders.txt', 'rb') as file:
+    with open('./media/list_of_orders.txt', 'rb') as file:
         await dp.bot.send_document(chat_id=message.from_user.id, document=file)
         await menu(message)
 
@@ -73,6 +79,10 @@ async def work_with_orders(message: types.Message):
     await message.answer("Введите номер заказа", reply_markup=kb_return)
     await ChangeOrderStatus.select_order.set()
 
+@dp.message_handler(text="🎟Добавить промокод", user_id=admins_id)
+async def work_with_orders(message: types.Message):
+    await message.answer("Введите новый промокод, значение и количество активаций через пробел(по умолчанию - 1)", reply_markup=kb_return)
+    await AddPromocode.promocode.set()
 
 @dp.message_handler(text="🏠Главное меню", user_id=admins_id)
 async def work_with_orders(message: types.Message):

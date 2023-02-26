@@ -16,6 +16,9 @@ admins_menu = ReplyKeyboardMarkup(
             KeyboardButton(text="🔄Изменить статус заказа"),
         ],
         [
+            KeyboardButton(text="🎟Добавить промокод"),
+        ],
+        [
             KeyboardButton(text="🏠Главное меню"),
         ]
     ],

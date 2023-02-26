@@ -12,6 +12,8 @@ from keyboards.default.yes_no import kb_yes_no
 from loader import dp, bot
 from states.calculate_clothes import CalculateClothes
 
+from datetime import datetime
+
 
 async def check_link(link):
     import re
@@ -57,8 +59,18 @@ async def get_clothes_price(message: types.Message, state: FSMContext):
     price = int(float(answer) * float(cource) + float(com_clothes) + float(com_service) - float(balance))
     await state.update_data(price=price)
 
-    await message.answer(f"Стоимость вещей:\n"
-                         f"<b>{price} рублей</b>")
+    text = (f"💸Итоговая стоимость: <b>{price} ₽</b>💸\n\n"
+                         "Стоимость включает:\n\n"
+                         f"<b>Курс ¥</b> - {MAIN_DATA.acell('A2').value}\n"
+                         "<b>Доставка по Китаю</b> - 0₽\n"
+                         f"<b>Доставка Китай-Москва</b> - {MAIN_DATA.acell('C2').value}₽\n"
+                         f"<b>Комиссия нашего сервиса</b> - {MAIN_DATA.acell('D2').value}₽")
+
+    if int(balance) > 0:
+        text += f"\n<b>Промокод</b> - {balance} ₽"
+
+    await message.answer(text)
+
     await message.answer("Хотите создать заказ?", reply_markup=kb_yes_no)
     await CalculateClothes.status.set()
 
@@ -146,8 +158,11 @@ async def get_clothes_photo(message: types.Message, state: FSMContext):
     status = "создан"
     price = data.get("price")
     photo = data.get("photo")
+    now = datetime.now()
+    formatted_date_time = now.strftime("%d-%m-%Y %H:%M")
+    history_of_statuses = str(status) + "  " + str(formatted_date_time)
 
-    ORDERS.append_row([order_number, user_id, order_name, link, status, price, photo])
+    ORDERS.append_row([order_number, user_id, order_name, link, status, price, photo, history_of_statuses])
 
     text = ""
     text += (f"#{order_number}\n"

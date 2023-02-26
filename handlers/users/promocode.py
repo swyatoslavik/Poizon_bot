@@ -33,5 +33,7 @@ async def promocode(message: types.Message, state: FSMContext):
     await message.answer(f"Промокод на сумму {promocode_value} успешно активирован и будет автоматически применён при следующем заказе!")
     balance = USERS.cell(USERS.find(str(message.from_user.id)).row, 4).value
     USERS.update_cell(USERS.find(str(message.from_user.id)).row, 4, str(int(balance) + int(promocode_value)))
+    cell = PROMOCODES.find(answer)
+    PROMOCODES.delete_row(cell.row)
     await state.finish()
     await menu(message)

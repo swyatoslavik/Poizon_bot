@@ -19,3 +19,6 @@ class ChangeCommission(StatesGroup):
 class ChangeOrderStatus(StatesGroup):
     select_order = State()
     change_status = State()
+
+class AddPromocode(StatesGroup):
+    promocode = State()

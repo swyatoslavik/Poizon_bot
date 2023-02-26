@@ -13,6 +13,7 @@ from .admins.change_clothes import dp
 from .admins.change_commission import dp
 from .admins.work_with_order import dp
 from .promocode import dp
+from .admins.add_promocode import dp
 
 from .error import dp
 

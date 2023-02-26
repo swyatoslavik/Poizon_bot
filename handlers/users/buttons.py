@@ -1,13 +1,16 @@
 from aiogram import types
-from aiogram.types import CallbackQuery, MediaGroup, InputFile
+from aiogram.types import CallbackQuery, MediaGroup, InputFile, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.callback_data import CallbackData
 
 from google_sheets import ORDERS
 from handlers.users.menu import menu
-from keyboards.default import kb_return
+from keyboards.default import kb_return, return_to_menu
+from keyboards.default.return_to_menu import kb_return_to_menu
 from keyboards.inline import ikb_menu
 from loader import dp
 from states.calculate_clothes import CalculateClothes
 from states.calculate_shoes import CalculateShoes
+from utils.send_photo import send_image
 
 
 @dp.message_handler(text="💰Рассчитать обувь")
@@ -82,8 +85,10 @@ async def select_type_of_order_clothes(callback_query: CallbackQuery):
 async def command_faq(message: types.Message):
     list_of_dicts = ORDERS.get_all_records()
     list_of_orders = []
+    orders = []
     for slovar in list_of_dicts:
         if str(slovar["user_id"]) == str(message.from_user.id):
+            orders.append(slovar["order_number"])
             list_of_orders.append([slovar["order_number"],
                                    slovar["order_name"],
                                    slovar["status"],
@@ -98,11 +103,52 @@ async def command_faq(message: types.Message):
         text += (f"#{order[0]}\n"
                  f"\t\t\t\t Название:\t\t{order[1]}\n"
                  f"\t\t\t\t Статус:\t\t{order[2]}\n"
-                 f"\t\t\t\t Стоимость:\t\t{order[3]} руб\n\n"
-                 f"\t\t\t\t Ссылка: \t\t{order[4]}")
-    await message.answer(text)
+                 f"\t\t\t\t Стоимость:\t\t{order[3]} руб\n"
+                 f"\t\t\t\t Ссылка: \t\t{order[4]}\n\n")
+    kb_list_of_orders = InlineKeyboardMarkup()
+    for order_number in orders:
+        button = InlineKeyboardButton(
+            text=order_number,
+            callback_data=order_number,
+        )
+        kb_list_of_orders.add(button)
+    kb_list_of_orders.add(InlineKeyboardButton(
+        text="Отмена",
+        callback_data="cancel",
+    ))
+    await message.answer(text, reply_markup=kb_list_of_orders)
+
+
+order_cd = CallbackData('order', 'id')
+
+
+@dp.callback_query_handler()
+async def more_info_callback_handler(query: types.CallbackQuery):
+    if query.data == 'cancel':
+        await query.answer()
+        await menu(query.message)
+        await query.message.edit_reply_markup(reply_markup=None)
+        return
+    order_number = query.data
+    order_info = ORDERS.row_values(ORDERS.find(order_number).row)
+    text = ""
+    text += (f"#{order_info[0]}\n"
+             f"\t\t\t\t Название:\t\t{order_info[2]}\n"
+             f"\t\t\t\t Статус:\t\t{order_info[4]}\n"
+             f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n"
+             f"\t\t\t\t Ссылка:\t\t{order_info[3]}\n\n"
+             f"История статусов:")
+    for status in str(order_info[7]).split("\n"):
+        text += "\n" + "\t\t\t\t" + str(status)
+    photo = await send_image(chat_id=query.message.chat.id, image_url=order_info[6])
+    await dp.bot.send_photo(query.message.chat.id, photo=photo, caption=text, reply_markup=kb_return_to_menu)
 
 
 @dp.message_handler(text="Назад ↩️")
 async def command_back(message: types.Message):
+    await menu(message)
+
+
+@dp.message_handler(text="🏠Главное меню")
+async def work_with_orders(message: types.Message):
     await menu(message)

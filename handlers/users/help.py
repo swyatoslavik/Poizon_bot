@@ -1,6 +1,7 @@
 from aiogram import types
 from aiogram.types import MediaGroup, InputFile
 
+from handlers.users.menu import menu
 from loader import dp
 
 
@@ -36,3 +37,4 @@ async def command_help(message: types.Message):
     photo_bytes = InputFile(path_or_bytesio="media/Photo5.jpg")
     album.attach_photo(photo=photo_bytes)
     await message.answer_media_group(album)
+    await menu(message)
