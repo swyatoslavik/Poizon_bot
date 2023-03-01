@@ -3,7 +3,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 kb_statuses = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="принят"),
+            KeyboardButton(text="ожидает оплаты"),
             KeyboardButton(text="оплачен"),
             KeyboardButton(text="выкуплен"),
 

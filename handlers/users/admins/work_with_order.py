@@ -1,5 +1,6 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from data.config import admins_id
 
@@ -7,15 +8,16 @@ from google_sheets import ORDERS
 
 from handlers.users.admins.admins_menu import menu
 
-from keyboards.default import kb_statuses, admins_menu, kb_return
+from keyboards.default import kb_statuses, admins_menu, kb_return, kb_select_change
 from loader import dp
-from states.admins import ChangeOrderStatus
+from states.admins import ChangeOrderStatus, ChangeOrder, ChangeOrderName
 from utils.send_photo import send_image
 
 from datetime import datetime
 
-@dp.message_handler(state=ChangeOrderStatus.select_order, user_id=admins_id)
-async def change_clothes(message: types.Message, state: FSMContext):
+
+@dp.message_handler(state=ChangeOrder.order_number, user_id=admins_id)
+async def get_order_info(message: types.Message, state: FSMContext):
     answer = message.text
 
     if answer == "Назад ↩️":
@@ -27,7 +29,7 @@ async def change_clothes(message: types.Message, state: FSMContext):
         await ChangeOrderStatus.select_order.set()
         return
     order_info = ORDERS.row_values(ORDERS.find(answer).row)
-    await state.update_data(select_order=answer)
+    await state.update_data(order_number=answer)
     user = await dp.bot.get_chat(order_info[1])
     text = ""
     text += (f"#{order_info[0]}\n"
@@ -38,7 +40,34 @@ async def change_clothes(message: types.Message, state: FSMContext):
              f"\t\t\t\t Ссылка:\t\t{order_info[3]}")
     photo = await send_image(chat_id=message.chat.id, image_url=order_info[6])
     await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_statuses)
-    await ChangeOrderStatus.change_status.set()
+    await message.answer("Выберите тип изменения:", reply_markup=kb_select_change)
+    await ChangeOrder.type_of_change.set()
+
+
+@dp.message_handler(state=ChangeOrder.type_of_change, user_id=admins_id)
+async def select_type_of_change(message: types.Message, state: FSMContext):
+    answer = message.text
+
+    if answer == "Назад ↩️":
+        await state.finish()
+        await menu(message)
+        return
+    elif answer == "🔄Изменить статус":
+        await message.answer("Выберите новый статус для заказа:", reply_markup=kb_statuses)
+        await ChangeOrderStatus.change_status.set()
+
+
+@dp.message_handler(state=ChangeOrderName.new_order_name, user_id=admins_id)
+async def change_order_name(message: types.Message, state: FSMContext):
+    answer = message.text
+
+    if answer == "Назад ↩️":
+        await state.finish()
+        await menu(message)
+        return
+
+    data = await state.get_data()
+    order_number = data.get("order_number")
 
 
 @dp.message_handler(state=ChangeOrderStatus.change_status, user_id=admins_id)
@@ -51,30 +80,59 @@ async def change_clothes(message: types.Message, state: FSMContext):
         return
 
     data = await state.get_data()
+    order_number = data.get("order_number")
     await state.update_data(change_status=answer)
-    ORDERS.update_cell(ORDERS.find(data.get("select_order")).row, 5, answer)
+    ORDERS.update_cell(ORDERS.find(order_number).row, 5, answer)
 
     now = datetime.now()
     formatted_date_time = now.strftime("%d-%m-%Y %H:%M")
-    old_history_of_statuses = ORDERS.cell(ORDERS.find(str(data.get("select_order"))).row, 8).value
+    old_history_of_statuses = ORDERS.cell(ORDERS.find(str(order_number)).row, 8).value
     history_of_statuses = str(old_history_of_statuses) + "\n" + str(answer) + "  " + str(formatted_date_time)
-    ORDERS.update_cell(ORDERS.find(data.get("select_order")).row, 8, history_of_statuses)
+    ORDERS.update_cell(ORDERS.find(order_number).row, 8, history_of_statuses)
+
+    await dp.bot.send_message(int(ORDERS.cell(ORDERS.find(order_number).row, 2).value),
+                              f"Вашему заказу #{order_number} присвоен новый статус - {answer}")
+    price = ORDERS.cell(ORDERS.find(str(order_number)).row, 6).value
+    if answer == "ожидает оплаты":
+        kb = InlineKeyboardMarkup()
+        button = InlineKeyboardButton("Подтвердить оплату✅", callback_data=f"confirm_order_payment_{order_number}")
+        kb.add(button)
+        await dp.bot.send_message(int(ORDERS.cell(ORDERS.find(order_number).row, 2).value),
+                                  "Доставка по России 🇷🇺 оплачивается отдельно. Отправляем🚛 через Boxberry, DPD, Почту России, СДЭК или Авито Доставку 📦. Самовывоз - бесплатно😊\n"
+                                  "Мы выкупаем товар в течение 12 часов⏳ после оплаты. Товар будет у нас примерно через 25 дней. Вы сможете отслеживать👀 посылку через нашего бота.\n"
+                                  f"Готовы оформить заказ? Тогда переведите <b>{price}</b> рублей на любую, удобную для вас карту из списка (для копирования номера карты просто нажмите на него):\n"
+                                  "     Тинькофф - <code>2200 7004 4459 5085</code> Святослав Ильич О\n"
+                                  "     Сбер - <code>2202 2061 1929 4283</code> Святослав Ильич О\n"
+                                  "     Альфа-Банк - <code>5559 4941 7261 0312</code> Святослав Ильич О\n"
+                                  "Пожалуйста, проверяйте получателя при переводе💳. С момента получения сообщения, на оплату дается 30 минут⏰, т.к. цена за товар может измениться.\n"
+                                  "Оплатите и нажмите кнопку Подтвердить оплату✅", reply_markup=kb)
+
+    await state.finish()
+    await menu(message)
+
+
+@dp.message_handler(state=ChangeOrder.final, user_id=admins_id)
+async def change_order_final(message: types.Message, state: FSMContext):
+    answer = message.text
+
+    if answer == "Назад ↩️":
+        await state.finish()
+        await menu(message)
+        return
+
+    data = await state.get_data()
+    order_number = data.get("order_number")
 
     await message.answer("Данные успешно обновлены.", reply_markup=admins_menu)
-    order_info = ORDERS.row_values(ORDERS.find(data.get("select_order")).row)
+    order_info = ORDERS.row_values(ORDERS.find(order_number).row)
     user = await dp.bot.get_chat(order_info[1])
+
     text = ""
-    print(order_info)
     text += (f"#{order_info[0]}\n"
              f"\t\t\t\t username:\t\t@{user.username}\n"
              f"\t\t\t\t Название:\t\t{order_info[2]}\n"
              f"\t\t\t\t Статус:\t\t{order_info[4]}\n"
              f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n"
              f"\t\t\t\t Ссылка:\t\t{order_info[3]}")
-    await message.answer(text)
-
-    await dp.bot.send_message(int(ORDERS.cell(ORDERS.find(data.get("select_order")).row, 2).value),
-                              f"Ваш заказ #{data.get('select_order')} получил новый статус: {answer}")
-
-    await state.finish()
-    await menu(message)
+    photo = await send_image(chat_id=message.chat.id, image_url=order_info[6])
+    await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_statuses)

@@ -11,7 +11,7 @@ from handlers.users.menu import menu as user_menu
 
 from keyboards.default import kb_return
 from loader import dp
-from states.admins import ChangeCourse, ChangeShoes, ChangeClothes, ChangeCommission, ChangeOrderStatus, AddPromocode
+from states.admins import ChangeCourse, ChangeShoes, ChangeClothes, ChangeCommission, ChangeOrder, AddPromocode
 
 
 @dp.message_handler(text="💴Изменить курс юаня", user_id=admins_id)
@@ -74,10 +74,10 @@ async def command_calculate_clothes(message: types.Message):
         await menu(message)
 
 
-@dp.message_handler(text="🔄Изменить статус заказа", user_id=admins_id)
+@dp.message_handler(text="🔄Обработать заказ", user_id=admins_id)
 async def work_with_orders(message: types.Message):
     await message.answer("Введите номер заказа", reply_markup=kb_return)
-    await ChangeOrderStatus.select_order.set()
+    await ChangeOrder.order_number.set()
 
 @dp.message_handler(text="🎟Добавить промокод", user_id=admins_id)
 async def work_with_orders(message: types.Message):

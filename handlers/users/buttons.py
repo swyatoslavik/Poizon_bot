@@ -129,19 +129,28 @@ async def more_info_callback_handler(query: types.CallbackQuery):
         await menu(query.message)
         await query.message.edit_reply_markup(reply_markup=None)
         return
-    order_number = query.data
-    order_info = ORDERS.row_values(ORDERS.find(order_number).row)
-    text = ""
-    text += (f"#{order_info[0]}\n"
-             f"\t\t\t\t Название:\t\t{order_info[2]}\n"
-             f"\t\t\t\t Статус:\t\t{order_info[4]}\n"
-             f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n"
-             f"\t\t\t\t Ссылка:\t\t{order_info[3]}\n\n"
-             f"История статусов:")
-    for status in str(order_info[7]).split("\n"):
-        text += "\n" + "\t\t\t\t" + str(status)
-    photo = await send_image(chat_id=query.message.chat.id, image_url=order_info[6])
-    await dp.bot.send_photo(query.message.chat.id, photo=photo, caption=text, reply_markup=kb_return_to_menu)
+    if "confirm_order_payment_" in query.data:
+        await query.message.answer(
+            "Вы успешно подтвердили оплату. В ближайшее время наши менеджеры проверят ваш платёж и подтвердят заказ. Вы получите текстовое сообщение от бота о смене статуса вашего заказа.")
+        await dp.bot.send_message(473151013,
+                                  f"Заказ #{query.data[22:]} оплачен пользователем. Проверьте статус платежа и обновите информацию о заказе")
+        await menu(query.message)
+        await query.message.edit_reply_markup(reply_markup=None)
+        return
+    else:
+        order_number = query.data
+        order_info = ORDERS.row_values(ORDERS.find(order_number).row)
+        text = ""
+        text += (f"#{order_info[0]}\n"
+                 f"\t\t\t\t Название:\t\t{order_info[2]}\n"
+                 f"\t\t\t\t Статус:\t\t{order_info[4]}\n"
+                 f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n"
+                 f"\t\t\t\t Ссылка:\t\t{order_info[3]}\n\n"
+                 f"История статусов:")
+        for status in str(order_info[7]).split("\n"):
+            text += "\n" + "\t\t\t\t" + str(status)
+        photo = await send_image(chat_id=query.message.chat.id, image_url=order_info[6])
+        await dp.bot.send_photo(query.message.chat.id, photo=photo, caption=text, reply_markup=kb_return_to_menu)
 
 
 @dp.message_handler(text="Назад ↩️")

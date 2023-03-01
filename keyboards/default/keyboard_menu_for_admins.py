@@ -13,7 +13,7 @@ admins_menu = ReplyKeyboardMarkup(
         ],
         [
             KeyboardButton(text="📋Список заказов"),
-            KeyboardButton(text="🔄Изменить статус заказа"),
+            KeyboardButton(text="🔄Обработать заказ"),
         ],
         [
             KeyboardButton(text="🎟Добавить промокод"),
