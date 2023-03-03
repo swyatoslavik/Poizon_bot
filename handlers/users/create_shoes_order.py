@@ -102,9 +102,9 @@ async def get_shoes_order_name(message: types.Message, state: FSMContext):
         return
 
     await state.update_data(order_name=answer)
-    text = "Что покупаем?\n"
-    "<b>Укажите ссылку на товар с сайта Poizon</b> 🔗"
-    "Как получить ссылку показано на фото"
+    text = "Что покупаем?\n" \
+           "<b>Укажите ссылку на товар с сайта Poizon</b> 🔗" \
+           "Как получить ссылку показано на фото"
     photo = InputFile("media/how_to_get_link.jpg")
     await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
     await CalculateShoes.link.set()
@@ -124,7 +124,7 @@ async def get_shoes_link(message: types.Message, state: FSMContext):
         return
     await state.update_data(link=answer)
     text = "Отправьте скриншот, на котором будет видно: Товар, размер, цвет"
-    photo = InputFile("media/how_to_send_photo.jpg")
+    photo = InputFile("media/how_to_send_image.jpg")
     await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
     await CalculateShoes.photo.set()
 

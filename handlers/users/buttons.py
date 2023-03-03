@@ -14,7 +14,7 @@ from states.calculate_shoes import CalculateShoes
 
 @dp.message_handler(text="💰Рассчитать обувь")
 async def command_calculate_shoes(message: types.Message):
-    text = "Введите цену на товар в ЮАНЯХ🇨🇳 и бот покажет цену с учетом доставки до склада в Москве\n"
+    text = "Введите цену на товар в ЮАНЯХ🇨🇳 и бот покажет цену с учетом доставки до склада в Ростове-на-Дону\n"
     "ВНИМАНИЕ! Указывайте цену, которая ЗАЧЕРКНУТА и находится СЛЕВА."
     photo = InputFile("media/how_to_specify_the_price.jpg")
     await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
@@ -23,7 +23,7 @@ async def command_calculate_shoes(message: types.Message):
 
 @dp.message_handler(text="💰Рассчитать одежду/аксессуары")
 async def command_calculate_clothes(message: types.Message):
-    text = "Введите цену на товар в ЮАНЯХ🇨🇳 и бот покажет цену с учетом доставки до склада в Москве\n"
+    text = "Введите цену на товар в ЮАНЯХ🇨🇳 и бот покажет цену с учетом доставки до склада в Ростове-на-Дону\n"
     "ВНИМАНИЕ! Указывайте цену, которая ЗАЧЕРКНУТА и находится СЛЕВА."
     photo = InputFile("media/how_to_specify_the_price.jpg")
     await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
@@ -82,13 +82,19 @@ async def show_inline_menu_to_choose_order_type(message: types.Message):
 
 @dp.callback_query_handler(text="Обувь")
 async def select_type_of_order_shoes(callback_query: CallbackQuery):
-    await callback_query.message.answer("Укажите стоимость товара в юанях", reply_markup=kb_return)
+    text = "Введите цену на товар в ЮАНЯХ🇨🇳 и бот покажет цену с учетом доставки до склада в Ростове-на-Дону\n"
+    "ВНИМАНИЕ! Указывайте цену, которая ЗАЧЕРКНУТА и находится СЛЕВА."
+    photo = InputFile("media/how_to_specify_the_price.jpg")
+    await dp.bot.send_photo(callback_query.message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
     await CalculateShoes.price.set()
 
 
 @dp.callback_query_handler(text="Одежда/аксессуары")
 async def select_type_of_order_clothes(callback_query: CallbackQuery):
-    await callback_query.message.answer("Укажите стоимость товара в юанях", reply_markup=kb_return)
+    text = "Введите цену на товар в ЮАНЯХ🇨🇳 и бот покажет цену с учетом доставки до склада в Ростове-на-Дону\n"
+    "ВНИМАНИЕ! Указывайте цену, которая ЗАЧЕРКНУТА и находится СЛЕВА."
+    photo = InputFile("media/how_to_specify_the_price.jpg")
+    await dp.bot.send_photo(callback_query.message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
     await CalculateClothes.price.set()
 
 
@@ -160,6 +166,7 @@ async def more_info_callback_handler(query: types.CallbackQuery):
                  f"История статусов:")
         for status in str(order_info[7]).split("\n"):
             text += "\n" + "\t\t\t\t" + str(status)
+        print(order_info[6])
         await dp.bot.send_photo(query.message.chat.id, photo=order_info[6], caption=text, reply_markup=kb_return_to_menu)
 
 
