@@ -10,8 +10,8 @@ from handlers.users.admins.admins_menu import menu
 
 from keyboards.default import kb_statuses, admins_menu, kb_return, kb_select_change
 from loader import dp
-from states.admins import ChangeOrderStatus, ChangeOrder, ChangeOrderName
-from utils.send_photo import send_image
+from states.admins import ChangeOrderStatus, ChangeOrder, ChangeOrderName, ChangeOrderCost, ChangeOrderLink, \
+    ChangeOrderPhoto
 
 from datetime import datetime
 
@@ -38,8 +38,7 @@ async def get_order_info(message: types.Message, state: FSMContext):
              f"\t\t\t\t Статус:\t\t{order_info[4]}\n"
              f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n"
              f"\t\t\t\t Ссылка:\t\t{order_info[3]}")
-    photo = await send_image(chat_id=message.chat.id, image_url=order_info[6])
-    await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_statuses)
+    await dp.bot.send_photo(message.chat.id, photo=order_info[6], caption=text, reply_markup=kb_statuses)
     await message.answer("Выберите тип изменения:", reply_markup=kb_select_change)
     await ChangeOrder.type_of_change.set()
 
@@ -55,6 +54,18 @@ async def select_type_of_change(message: types.Message, state: FSMContext):
     elif answer == "🔄Изменить статус":
         await message.answer("Выберите новый статус для заказа:", reply_markup=kb_statuses)
         await ChangeOrderStatus.change_status.set()
+    elif answer == "💭Изменить название":
+        await message.answer("Введите новое название заказа:", reply_markup=kb_return)
+        await ChangeOrderName.new_order_name.set()
+    elif answer == "💰Изменить стоимость":
+        await message.answer("Введите новую стоимость заказа:", reply_markup=kb_return)
+        await ChangeOrderCost.new_order_cost.set()
+    elif answer == "🔗Изменить ссылку":
+        await message.answer("Введите новую ссылку заказа:", reply_markup=kb_return)
+        await ChangeOrderLink.new_order_link.set()
+    elif answer == "📷Изменить фотографию":
+        await message.answer("Отправьте новую фотографию заказа:", reply_markup=kb_return)
+        await ChangeOrderPhoto.new_order_photo.set()
 
 
 @dp.message_handler(state=ChangeOrderName.new_order_name, user_id=admins_id)
@@ -68,10 +79,14 @@ async def change_order_name(message: types.Message, state: FSMContext):
 
     data = await state.get_data()
     order_number = data.get("order_number")
+    row_number = ORDERS.findall(order_number, in_column=1)[0].row
+    ORDERS.update_cell(row_number, 3, answer)
+    await state.finish()
+    await change_order_final(message, order_number)
 
 
 @dp.message_handler(state=ChangeOrderStatus.change_status, user_id=admins_id)
-async def change_clothes(message: types.Message, state: FSMContext):
+async def change_order_status(message: types.Message, state: FSMContext):
     answer = message.text
 
     if answer == "Назад ↩️":
@@ -108,11 +123,11 @@ async def change_clothes(message: types.Message, state: FSMContext):
                                   "Оплатите и нажмите кнопку Подтвердить оплату✅", reply_markup=kb)
 
     await state.finish()
-    await menu(message)
+    await change_order_final(message, order_number)
 
 
-@dp.message_handler(state=ChangeOrder.final, user_id=admins_id)
-async def change_order_final(message: types.Message, state: FSMContext):
+@dp.message_handler(state=ChangeOrderCost.new_order_cost, user_id=admins_id)
+async def change_order_cost(message: types.Message, state: FSMContext):
     answer = message.text
 
     if answer == "Назад ↩️":
@@ -122,7 +137,48 @@ async def change_order_final(message: types.Message, state: FSMContext):
 
     data = await state.get_data()
     order_number = data.get("order_number")
+    row_number = ORDERS.findall(order_number, in_column=1)[0].row
+    ORDERS.update_cell(row_number, 6, answer)
+    await state.finish()
+    await change_order_final(message, order_number)
 
+
+@dp.message_handler(state=ChangeOrderLink.new_order_link, user_id=admins_id)
+async def change_order_link(message: types.Message, state: FSMContext):
+    answer = message.text
+
+    if answer == "Назад ↩️":
+        await state.finish()
+        await menu(message)
+        return
+
+    data = await state.get_data()
+    order_number = data.get("order_number")
+    row_number = ORDERS.findall(order_number, in_column=1)[0].row
+    ORDERS.update_cell(row_number, 4, answer)
+    await state.finish()
+    await change_order_final(message, order_number)
+
+
+@dp.message_handler(state=ChangeOrderPhoto.new_order_photo, user_id=admins_id)
+async def change_order_photo(message: types.Message, state: FSMContext):
+    answer = message.text
+
+    if answer == "Назад ↩️":
+        await state.finish()
+        await menu(message)
+        return
+
+    data = await state.get_data()
+    order_number = data.get("order_number")
+    row_number = ORDERS.findall(order_number, in_column=1)[0].row
+    answer = message.photo[-1].file_id
+    ORDERS.update_cell(row_number, 7, answer)
+    await state.finish()
+    await change_order_final(message, order_number)
+
+
+async def change_order_final(message: types.Message, order_number):
     await message.answer("Данные успешно обновлены.", reply_markup=admins_menu)
     order_info = ORDERS.row_values(ORDERS.find(order_number).row)
     user = await dp.bot.get_chat(order_info[1])
@@ -134,5 +190,4 @@ async def change_order_final(message: types.Message, state: FSMContext):
              f"\t\t\t\t Статус:\t\t{order_info[4]}\n"
              f"\t\t\t\t Стоимость:\t\t{order_info[5]} руб\n"
              f"\t\t\t\t Ссылка:\t\t{order_info[3]}")
-    photo = await send_image(chat_id=message.chat.id, image_url=order_info[6])
-    await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_statuses)
+    await dp.bot.send_photo(message.chat.id, photo=order_info[6], caption=text, reply_markup=kb_statuses)

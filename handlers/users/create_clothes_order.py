@@ -1,6 +1,6 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.types import ContentType
+from aiogram.types import ContentType, InputFile
 
 from data import config
 from filters import IsPrivate
@@ -30,13 +30,6 @@ async def create_an_order_number():
     return num
 
 
-async def get_photo(message):
-    photo = message.photo[-1]
-    photo_id = photo.file_id
-    photo_file = await bot.get_file(photo_id)
-    photo_url = f"https://api.telegram.org/file/bot{config.BOT_TOKEN}/{photo_file.file_path}"
-    return photo_url
-
 
 @dp.message_handler(IsPrivate(), state=CalculateClothes.price)
 async def get_clothes_price(message: types.Message, state: FSMContext):
@@ -60,18 +53,18 @@ async def get_clothes_price(message: types.Message, state: FSMContext):
     await state.update_data(price=price)
 
     text = (f"💸Итоговая стоимость: <b>{price} ₽</b>💸\n\n"
-                         "Стоимость включает:\n\n"
-                         f"<b>Курс ¥</b> - {MAIN_DATA.acell('A2').value}\n"
-                         "<b>Доставка по Китаю</b> - 0₽\n"
-                         f"<b>Доставка Китай-Москва</b> - {MAIN_DATA.acell('C2').value}₽\n"
-                         f"<b>Комиссия нашего сервиса</b> - {MAIN_DATA.acell('D2').value}₽")
+            "Стоимость включает:\n\n"
+            f"<b>Курс ¥</b> - {MAIN_DATA.acell('A2').value}\n"
+            "<b>Доставка по Китаю</b> - 0₽\n"
+            f"<b>Доставка Китай-Москва</b> - {MAIN_DATA.acell('C2').value}₽\n"
+            f"<b>Комиссия нашего сервиса</b> - {MAIN_DATA.acell('D2').value}₽")
 
     if int(balance) > 0:
         text += f"\n<b>Промокод</b> - {balance} ₽"
 
     await message.answer(text)
 
-    await message.answer("Хотите создать заказ?", reply_markup=kb_yes_no)
+    await message.answer("Оформим заказ?", reply_markup=kb_yes_no)
     await CalculateClothes.status.set()
 
 
@@ -86,8 +79,9 @@ async def get_clothes_status(message: types.Message, state: FSMContext):
 
     await state.update_data(status=answer)
     if answer == "Да ️✅" or answer.lower() == "да":
-        await message.answer("Введите название заказа на русском.\n"
-                             "Это может быть название вещи, её цвет и размер, например.", reply_markup=kb_return)
+        await message.answer("Укажите название заказа.\n"
+                             "Оно должно содержать название вещи, её цвет и размер\n"
+                             "Например, Зипка Stone Island, L, тёмно-синяя", reply_markup=kb_return)
         await CalculateClothes.order_name.set()
     elif answer == "Нет❌️" or answer.lower() == "нет":
         await state.finish()
@@ -109,8 +103,11 @@ async def get_clothes_order_name(message: types.Message, state: FSMContext):
         return
 
     await state.update_data(order_name=answer)
-    await message.answer("Введите ссылку на товар в формате:\n"
-                         "https://dw4.co/t/A/167cOUmx")
+    text = "Что покупаем?\n"
+    "<b>Укажите ссылку на товар с сайта Poizon</b> 🔗"
+    "Как получить ссылку показано на фото"
+    photo = InputFile("media/how_to_get_link.jpg")
+    await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
     await CalculateClothes.link.set()
 
 
@@ -122,13 +119,20 @@ async def get_clothes_link(message: types.Message, state: FSMContext):
         await state.finish()
         await menu(message)
         return
-    if not check_link(answer):
+    check_link_flag = False
+    link = answer
+    for s in answer.split():
+        if check_link(s.strip()):
+            link = s
+            check_link_flag = True
+    if not check_link_flag:
         await message.answer("Неверный формат ссылки. Повторите попытку.")
         await CalculateClothes.link.set()
         return
-    await state.update_data(link=answer)
-
-    await message.answer("Отправьте скриншот, на котором будет видно: Товар, размер, цвет")
+    await state.update_data(link=link)
+    text = "Отправьте скриншот, на котором будет видно: Товар, размер, цвет"
+    photo = InputFile("media/how_to_send_photo.jpg")
+    await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
     await CalculateClothes.photo.set()
 
 
@@ -146,7 +150,7 @@ async def get_clothes_photo(message: types.Message, state: FSMContext):
                              "Отправьте скриншот, на котором будет видно: Товар, размер, цвет.")
         await CalculateClothes.photo.set()
 
-    photo = await get_photo(message)
+    photo = message.photo[-1].file_id
     await state.update_data(photo=photo)
 
     data = await state.get_data()

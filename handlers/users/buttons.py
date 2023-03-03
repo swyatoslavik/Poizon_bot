@@ -4,30 +4,41 @@ from aiogram.utils.callback_data import CallbackData
 
 from google_sheets import ORDERS
 from handlers.users.menu import menu
-from keyboards.default import kb_return, return_to_menu
-from keyboards.default.return_to_menu import kb_return_to_menu
+from keyboards.default import kb_return, kb_return_to_menu
 from keyboards.inline import ikb_menu
 from loader import dp
 from states.calculate_clothes import CalculateClothes
 from states.calculate_shoes import CalculateShoes
-from utils.send_photo import send_image
+
 
 
 @dp.message_handler(text="💰Рассчитать обувь")
 async def command_calculate_shoes(message: types.Message):
-    await message.answer("Укажите стоимость товара в юанях", reply_markup=kb_return)
+    text = "Введите цену на товар в ЮАНЯХ🇨🇳 и бот покажет цену с учетом доставки до склада в Москве\n"
+    "ВНИМАНИЕ! Указывайте цену, которая ЗАЧЕРКНУТА и находится СЛЕВА."
+    photo = InputFile("media/how_to_specify_the_price.jpg")
+    await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
     await CalculateShoes.price.set()
 
 
 @dp.message_handler(text="💰Рассчитать одежду/аксессуары")
 async def command_calculate_clothes(message: types.Message):
-    await message.answer("Укажите стоимость товара в юанях", reply_markup=kb_return)
+    text = "Введите цену на товар в ЮАНЯХ🇨🇳 и бот покажет цену с учетом доставки до склада в Москве\n"
+    "ВНИМАНИЕ! Указывайте цену, которая ЗАЧЕРКНУТА и находится СЛЕВА."
+    photo = InputFile("media/how_to_specify_the_price.jpg")
+    await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
     await CalculateClothes.price.set()
 
 
 @dp.message_handler(text="🎯Отзывы")
 async def command_reviews(message: types.Message):
-    await message.answer("Отзывы")
+    photo = InputFile("media/image_of_reviews_group.jpg")
+    text = "Наши отзывы в телеграм:\nhttps://t.me/+ujg3-Uj-b-RlY2Ey"
+    await dp.bot.send_photo(message.chat.id, photo=photo, caption=text)
+    photo = InputFile("media/image_of_avito_reviews.jpeg")
+    text = "Наши отзывы на Авито:\nhttps://clck.ru/33fnmW"
+    await dp.bot.send_photo(message.chat.id, photo=photo, caption=text)
+    await menu(message)
 
 
 @dp.message_handler(text="👨‍💻Помощь")
@@ -149,8 +160,7 @@ async def more_info_callback_handler(query: types.CallbackQuery):
                  f"История статусов:")
         for status in str(order_info[7]).split("\n"):
             text += "\n" + "\t\t\t\t" + str(status)
-        photo = await send_image(chat_id=query.message.chat.id, image_url=order_info[6])
-        await dp.bot.send_photo(query.message.chat.id, photo=photo, caption=text, reply_markup=kb_return_to_menu)
+        await dp.bot.send_photo(query.message.chat.id, photo=order_info[6], caption=text, reply_markup=kb_return_to_menu)
 
 
 @dp.message_handler(text="Назад ↩️")

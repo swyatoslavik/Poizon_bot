@@ -20,7 +20,6 @@ class ChangeCommission(StatesGroup):
 class ChangeOrder(StatesGroup):
     order_number = State()
     type_of_change = State()
-    final = State()
 
 
 class ChangeOrderName(StatesGroup):
@@ -30,6 +29,15 @@ class ChangeOrderName(StatesGroup):
 class ChangeOrderStatus(StatesGroup):
     select_order = State()
     change_status = State()
+
+class ChangeOrderCost(StatesGroup):
+    new_order_cost = State()
+
+class ChangeOrderLink(StatesGroup):
+    new_order_link = State()
+
+class ChangeOrderPhoto(StatesGroup):
+    new_order_photo = State()
 
 
 class AddPromocode(StatesGroup):
