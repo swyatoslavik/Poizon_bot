@@ -1,3 +1,6 @@
+import random
+import string
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 
@@ -8,6 +11,11 @@ from handlers.users.admins.admins_menu import menu
 from loader import dp
 
 from states.admins import AddPromocode
+
+
+async def generate_promo():
+    letters_and_digits = string.ascii_letters + string.digits
+    return ''.join(random.choice(letters_and_digits) for _ in range(8))
 
 
 @dp.message_handler(state=AddPromocode.promocode, user_id=admins_id)
@@ -29,8 +37,9 @@ async def add_promo(message: types.Message, state: FSMContext):
             promo = answer
             value = "100"
             num = 1
-    for _ in range(int(num)):
-        PROMOCODES.append_row([promo, value, "June"])
+    if promo == "рандом":
+        promo = await generate_promo()
+    PROMOCODES.append_row([promo, value, num, "admin"])
     await message.answer(f"Промокод {promo} на сумму {value} в количестве {num} успешно добавлен")
     await menu(message)
     await state.finish()

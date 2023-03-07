@@ -166,7 +166,6 @@ async def more_info_callback_handler(query: types.CallbackQuery):
                  f"История статусов:")
         for status in str(order_info[7]).split("\n"):
             text += "\n" + "\t\t\t\t" + str(status)
-        print(order_info[6])
         await dp.bot.send_photo(query.message.chat.id, photo=order_info[6], caption=text, reply_markup=kb_return_to_menu)
 
 

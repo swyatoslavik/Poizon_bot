@@ -2,7 +2,6 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ContentType, InputFile
 
-from data import config
 from filters import IsPrivate
 from google_sheets import ORDERS, MAIN_DATA, USERS
 from handlers.users.menu import menu
@@ -18,7 +17,11 @@ from datetime import datetime
 async def check_link(link):
     import re
     link_regex = r'^https:\/\/dw4\.co\/t\/[A-Z]\/[a-zA-Z0-9]+$'
-    return re.match(link_regex, link)
+
+    for s in link.split():
+        if re.match(link_regex, s.strip()):
+            return s
+    return False
 
 
 async def create_an_order_number():
@@ -28,7 +31,6 @@ async def create_an_order_number():
         print("Уже есть такой заказ")
         return create_an_order_number()
     return num
-
 
 
 @dp.message_handler(IsPrivate(), state=CalculateClothes.price)
@@ -48,11 +50,15 @@ async def get_clothes_price(message: types.Message, state: FSMContext):
     cource = MAIN_DATA.acell('A2').value
     com_clothes = MAIN_DATA.acell("C2").value
     com_service = MAIN_DATA.acell("D2").value
-    balance = USERS.cell(USERS.find(str(message.from_user.id)).row, 4).value
-    price = int(float(answer) * float(cource) + float(com_clothes) + float(com_service) - float(balance))
-    await state.update_data(price=price)
+    balance = int(USERS.cell(USERS.find(str(message.from_user.id)).row, 4).value)
+    price = int(float(answer) * float(cource) + float(com_clothes) + float(com_service))
+    if balance > price // 2:
+        final_price, balance = price // 2, price // 2
+    else:
+        final_price = price - balance
+    await state.update_data(price=final_price)
 
-    text = (f"💸Итоговая стоимость: <b>{price} ₽</b>💸\n\n"
+    text = (f"💸Итоговая стоимость: <b>{final_price} ₽</b>💸\n\n"
             "Стоимость включает:\n\n"
             f"<b>Курс ¥</b> - {MAIN_DATA.acell('A2').value}\n"
             "<b>Доставка по Китаю</b> - 0₽\n"
@@ -119,20 +125,19 @@ async def get_clothes_link(message: types.Message, state: FSMContext):
         await state.finish()
         await menu(message)
         return
-    check_link_flag = False
-    link = answer
-    for s in answer.split():
-        if check_link(s.strip()):
-            link = s
-            check_link_flag = True
-    if not check_link_flag:
+
+    link = await check_link(answer)
+    if not link:
         await message.answer("Неверный формат ссылки. Повторите попытку.")
         await CalculateClothes.link.set()
         return
+
     await state.update_data(link=link)
+
     text = "Отправьте скриншот, на котором будет видно: Товар, размер, цвет"
     photo = InputFile("media/how_to_send_image.jpg")
     await dp.bot.send_photo(message.chat.id, photo=photo, caption=text, reply_markup=kb_return)
+
     await CalculateClothes.photo.set()
 
 
@@ -177,6 +182,7 @@ async def get_clothes_photo(message: types.Message, state: FSMContext):
              f"\t\t\t\t Ссылка: \t\t{link}")
     await bot.send_message(473151013, f"Новый заказ (одежда).\n{text}")
 
+    USERS.update_cell(USERS.find(str(message.from_user.id)).row, 4, 0)
     await message.answer(f"Заказ #{order_number} создан и отправлен модератору. В ближайшее время он будет рассмотрен")
     number_of_orders = USERS.cell(USERS.find(str(message.from_user.id)).row, 3).value
     USERS.update_cell(USERS.find(str(message.from_user.id)).row, 3, str(int(number_of_orders) + 1))

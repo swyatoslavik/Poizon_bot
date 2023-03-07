@@ -25,15 +25,26 @@ async def promocode(message: types.Message, state: FSMContext):
         return
 
     if not PROMOCODES.find(answer):
-        await message.answer(f"Промокод {answer} не найден!", reply_markup=kb_return)
+        await message.answer(f"Промокод {answer} не найден!\nПовторите попытку ввода:", reply_markup=kb_return)
         await Promocode.promo.set()
         return
 
-    promocode_value = PROMOCODES.row_values(PROMOCODES.find(answer).row)[1]
-    await message.answer(f"Промокод на сумму {promocode_value} успешно активирован и будет автоматически применён при следующем заказе!")
-    balance = USERS.cell(USERS.find(str(message.from_user.id)).row, 4).value
-    USERS.update_cell(USERS.find(str(message.from_user.id)).row, 4, str(int(balance) + int(promocode_value)))
-    cell = PROMOCODES.find(answer)
-    PROMOCODES.delete_row(cell.row)
+    promocode_info = PROMOCODES.row_values(PROMOCODES.find(answer).row)
+    user_id = message.from_user.id
+    if int(promocode_info[2]) == 0:
+        await message.answer(f"Промокод {answer} недействителен")
+    elif str(user_id) in promocode_info[3]:
+        await message.answer(f"Вы уже использовали промокод {answer}")
+    else:
+        promocode_value = promocode_info[1]
+        await message.answer(
+            f"Промокод на сумму {promocode_value} успешно активирован и будет автоматически применён при следующем заказе!")
+        balance = USERS.cell(USERS.find(str(user_id)).row, 4).value
+        USERS.update_cell(USERS.find(str(user_id)).row, 4, str(int(balance) + int(promocode_value)))
+        cell = PROMOCODES.find(answer)
+        users = PROMOCODES.cell(cell.row, 3).value
+        PROMOCODES.update_cell(cell.row, 3, str(int(users) - 1))
+        list_users = str(PROMOCODES.cell(cell.row, 4).value)
+        PROMOCODES.update_cell(cell.row, 4, list_users + f" {str(user_id)}")
     await state.finish()
     await menu(message)
